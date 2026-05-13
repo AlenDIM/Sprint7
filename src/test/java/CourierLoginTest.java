@@ -15,9 +15,9 @@ import static org.hamcrest.CoreMatchers.instanceOf;
 public class CourierLoginTest {
 
     private final CourierSteps courierSteps = new CourierSteps();
-    private final String login = "AlenWallke2r";
+    private final String login = "AlenWallke213r";
     private final String password = "qwerty12345";
-    private final String firstName = "Дмитрий2";
+    private final String firstName = "Дмитрий213";
     private int createdCourierId = 0;
 
     @Before

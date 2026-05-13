@@ -1,8 +1,5 @@
 import io.qameta.allure.Description;
 import io.qameta.allure.junit4.DisplayName;
-import org.example.steps.CourierSteps;
-import io.qameta.allure.Description;
-import io.qameta.allure.junit4.DisplayName;
 import io.restassured.response.Response;
 import org.example.pojo.CourierCreateRequest;
 import org.example.pojo.CourierLoginRequest;
@@ -11,31 +8,25 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import static io.restassured.RestAssured.given;
 import static org.apache.http.HttpStatus.*;
-import static org.example.constants.ApiEndpoint.BASE_URL;
-import static org.example.constants.ApiEndpoint.COURIER_POST_LOGIN;
 import static org.hamcrest.CoreMatchers.equalTo;
 
 public class CourierCreateTest {
 
     private final CourierSteps courierSteps = new CourierSteps();
-    private final String login = "AlenWallker2";
+    private final String login = "AlenWallker2123";
     private final String password = "qwerty12345";
-    private final String firstName = "Дмитрий2";
-    private int createdCourierId = 0;
+    private final String firstName = "Дмитрий2123";
+
 
     @Before
     public void deleteIfExists() {
         try {
             CourierLoginRequest loginReq = new CourierLoginRequest(login, password);
-            Response resp = given()
-                    .contentType(io.restassured.http.ContentType.JSON)
-                    .body(loginReq)
-                    .post(BASE_URL + COURIER_POST_LOGIN);
-            if (resp.statusCode() == SC_OK) {
-                int id = resp.jsonPath().getInt("id");
-                given().delete(BASE_URL + "/api/v1/courier/" + id);
+            Response loginResp = courierSteps.courierLogin(loginReq).extract().response();
+            if (loginResp.statusCode() == SC_OK) {
+                int id = loginResp.jsonPath().getInt("id");
+                courierSteps.courierDelete(id);
             }
         } catch (Exception e) {
             // Курьер не существует – ничего не делаем
@@ -44,16 +35,17 @@ public class CourierCreateTest {
 
     @After
     public void deleteCreatedCourier() {
-        if (createdCourierId != 0) {
-            courierSteps.courierDelete(createdCourierId);
+        try {
+            Response loginResp = courierSteps.courierLogin(new CourierLoginRequest(login, password))
+                    .extract().response();
+            if (loginResp.statusCode() == SC_OK) {
+                int id = loginResp.jsonPath().getInt("id");
+                courierSteps.courierDelete(id);
+            }
+        } catch (Exception ignored) {
         }
     }
 
-    private void loginAndSaveId() {
-        CourierLoginRequest loginReq = new CourierLoginRequest(login, password);
-        Response response = courierSteps.courierLogin(loginReq).extract().response();
-        createdCourierId = response.jsonPath().getInt("id");
-    }
 
     @Test
     @DisplayName("Создание нового курьера")
@@ -63,8 +55,6 @@ public class CourierCreateTest {
         courierSteps.courierCreate(request)
                 .statusCode(SC_CREATED)
                 .body("ok", equalTo(true));
-
-        loginAndSaveId();
     }
 
     @Test
@@ -83,7 +73,6 @@ public class CourierCreateTest {
                 .statusCode(SC_CONFLICT)
                 .body("message", equalTo("Этот логин уже используется. Попробуйте другой."));
 
-        loginAndSaveId();
     }
 
     @Test
